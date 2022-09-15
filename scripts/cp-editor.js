@@ -30,6 +30,8 @@ H5PEditor.CoursePresentation = function (parent, field, params, setValue) {
     setValue(field, params);
   }
 
+  // console.log({field, params});
+
   this.parent = parent;
   this.field = field;
   this.params = params;
@@ -142,7 +144,8 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
       x: 30,
       y: 30,
       width: 40,
-      height: 40
+      height: 40,
+      animate:true
     };
 
     if (library === 'GoToSlide') {
@@ -199,9 +202,9 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
   if (options.pasted) {
     elementParams.pasted = true;
   }
-
   var slideIndex = this.cp.$current.index();
-  var slideParams = this.params.slides[slideIndex];
+  console.log({sad: this.params.slides, slideIndex: slideIndex + 1});
+  var slideParams = this.params.slides[slideIndex + 1];
 
   if (slideParams.elements === undefined) {
     // No previous elements
@@ -230,9 +233,9 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
   }
 
   this.cp.$boxWrapper.add(this.cp.$boxWrapper.find('.h5p-presentation-wrapper:first')).css('overflow', 'visible');
-
-  const element = this.cp.children[slideIndex].addChild(elementParams);
-  return this.cp.attachElement(elementParams, element.instance, this.cp.$current, slideIndex);
+  elementParams.presentation = this.cp.presentation
+  const element = this.cp.children[slideIndex + 1].addChild(elementParams);
+  return this.cp.attachElement(elementParams, element.instance, this.cp.$current, slideIndex + 1);
 };
 
 /**
@@ -253,7 +256,7 @@ H5PEditor.CoursePresentation.prototype.appendTo = function ($wrapper) {
   if (presentationParams && presentationParams.override && presentationParams.override.activeSurface === true) {
     this.slideRatio = H5PEditor.CoursePresentation.RATIO_SURFACE;
   }
-  this.cp = new H5P.CoursePresentation(presentationParams, H5PEditor.contentId, {cpEditor: this});
+  this.cp = new H5P.CoursePresentation(presentationParams, H5PEditor.contentId, { cpEditor: this });
   this.cp.attach(this.$editor);
   if (this.cp.$wrapper.is(':visible')) {
     this.cp.trigger('resize');
@@ -278,8 +281,8 @@ H5PEditor.CoursePresentation.prototype.appendTo = function ($wrapper) {
     $add: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'newSlide') + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-add"></a>'),
     $clone: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'cloneSlide') + '" class="h5p-clone-slide h5p-slidecontrols-button h5p-slidecontrols-button-clone"></a>'),
     $background: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'backgroundSlide') + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-background"></a>'),
-    $sortLeft: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'sortSlide', {':dir': 'left'}) + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-sort-left"></a>'),
-    $sortRight: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'sortSlide', {':dir': 'right'}) + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-sort-right"></a>'),
+    $sortLeft: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'sortSlide', { ':dir': 'left' }) + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-sort-left"></a>'),
+    $sortRight: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'sortSlide', { ':dir': 'right' }) + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-sort-right"></a>'),
     $delete: H5PEditor.$('<a href="#" aria-label="' + H5PEditor.t('H5PEditor.CoursePresentation', 'removeSlide') + '" class="h5p-slidecontrols-button h5p-slidecontrols-button-delete"></a>')
   };
   this.slideControls = slideControls;
@@ -545,7 +548,7 @@ H5PEditor.CoursePresentation.prototype.initializeDNB = function () {
       });
     }
 
-    that.dnb = new H5P.DragNBar(buttons, that.cp.$current, that.$editor, {$blurHandlers: that.cp.$boxWrapper, libraries: libraries});
+    that.dnb = new H5P.DragNBar(buttons, that.cp.$current, that.$editor, { $blurHandlers: that.cp.$boxWrapper, libraries: libraries });
 
     that.$dnbContainer = that.cp.$current;
     that.dnb.dnr.snap = 10;
@@ -728,7 +731,7 @@ H5PEditor.CoursePresentation.prototype.initializeDNB = function () {
 H5PEditor.CoursePresentation.prototype.canPaste = function (clipboard) {
   if (clipboard) {
     if (clipboard.from === H5PEditor.CoursePresentation.clipboardKey &&
-        (!clipboard.generic || this.supported(clipboard.generic.library))) {
+      (!clipboard.generic || this.supported(clipboard.generic.library))) {
       // Content comes from the same version of CP
       // Non generic part = must be content like gotoslide or similar
       return true;
@@ -819,23 +822,23 @@ H5PEditor.CoursePresentation.prototype.initKeywordInteractions = function () {
   // Add our own menu to the drag and drop menu bar.
   that.$keywordsDNB = H5PEditor.$(
     '<ul class="h5p-dragnbar-ul h5p-dragnbar-left">' +
-      '<li class="h5p-slides-menu">' +
-        '<div title="' + H5PEditor.t('H5PEditor.CoursePresentation', 'slides') + '" class="h5p-dragnbar-keywords" role="button" tabindex="0">' +
-          '<span>' + H5PEditor.t('H5PEditor.CoursePresentation', 'slides') + '</span>' +
-        '</div>' +
-        '<div class="h5p-keywords-dropdown">' +
-          '<label class="h5p-keywords-enable">' +
-            '<input type="checkbox"/>' +
-            H5PEditor.t('H5PEditor.CoursePresentation', 'showTitles') +
-          '</label>' +
-          '<label class="h5p-keywords-always"><input type="checkbox"/>' + H5PEditor.t('H5PEditor.CoursePresentation', 'alwaysShow') + '</label>' +
-          '<label class="h5p-keywords-hide"><input type="checkbox"/>' + H5PEditor.t('H5PEditor.CoursePresentation', 'autoHide') + '</label>' +
-          '<label class="h5p-keywords-opacity"><input type="text"/> % ' + H5PEditor.t('H5PEditor.CoursePresentation', 'opacity') + '</label>' +
-          '<div class="h5peditor-button h5peditor-button-textual importance-low" role="button" tabindex="0" aria-disabled="false">' +
-            H5PEditor.t('H5PEditor.CoursePresentation', 'ok') +
-          '</div>' +
-        '</div>' +
-      '</li>' +
+    '<li class="h5p-slides-menu">' +
+    '<div title="' + H5PEditor.t('H5PEditor.CoursePresentation', 'slides') + '" class="h5p-dragnbar-keywords" role="button" tabindex="0">' +
+    '<span>' + H5PEditor.t('H5PEditor.CoursePresentation', 'slides') + '</span>' +
+    '</div>' +
+    '<div class="h5p-keywords-dropdown">' +
+    '<label class="h5p-keywords-enable">' +
+    '<input type="checkbox"/>' +
+    H5PEditor.t('H5PEditor.CoursePresentation', 'showTitles') +
+    '</label>' +
+    '<label class="h5p-keywords-always"><input type="checkbox"/>' + H5PEditor.t('H5PEditor.CoursePresentation', 'alwaysShow') + '</label>' +
+    '<label class="h5p-keywords-hide"><input type="checkbox"/>' + H5PEditor.t('H5PEditor.CoursePresentation', 'autoHide') + '</label>' +
+    '<label class="h5p-keywords-opacity"><input type="text"/> % ' + H5PEditor.t('H5PEditor.CoursePresentation', 'opacity') + '</label>' +
+    '<div class="h5peditor-button h5peditor-button-textual importance-low" role="button" tabindex="0" aria-disabled="false">' +
+    H5PEditor.t('H5PEditor.CoursePresentation', 'ok') +
+    '</div>' +
+    '</div>' +
+    '</li>' +
     '</ul>').prependTo(this.$bar);
 
   that.initKeywordMenu();
@@ -1174,8 +1177,8 @@ H5PEditor.CoursePresentation.prototype.updateSlidesSidebar = function () {
 
     var $editIcon = H5PEditor.$(
       '<a href="#" class="joubel-icon-edit h5p-hidden" title="' + H5PEditor.t('H5PEditor.CoursePresentation', 'edit') + '" tabindex="0">' +
-        '<span class="h5p-icon-circle"></span>' +
-        '<span class="h5p-icon-pencil"></span>' +
+      '<span class="h5p-icon-circle"></span>' +
+      '<span class="h5p-icon-pencil"></span>' +
       '</a>'
     ).click(function () {
       // If clicked is not already active, do a double click
@@ -1188,7 +1191,7 @@ H5PEditor.CoursePresentation.prototype.updateSlidesSidebar = function () {
       $editIcon.siblings('textarea').select();
       return false;
     }).keydown(function (event) {
-      if ([13,32].indexOf(event.which) !== -1) {
+      if ([13, 32].indexOf(event.which) !== -1) {
         H5PEditor.$(this).click();
         return false;
       }
@@ -1259,7 +1262,7 @@ H5PEditor.CoursePresentation.prototype.sortSlide = function ($element, direction
   this.cp.jumpToSlide(newIndex);
 
   // Need to inform exportable text area about the change:
-  H5P.ExportableTextArea.CPInterface.changeSlideIndex(direction > 0 ? index : index-1, direction > 0 ? index+1 : index);
+  H5P.ExportableTextArea.CPInterface.changeSlideIndex(direction > 0 ? index : index - 1, direction > 0 ? index + 1 : index);
 
   // Update params.
   this.swapCollectionIndex(this.params.slides, index, newIndex);
@@ -1326,8 +1329,8 @@ H5PEditor.CoursePresentation.prototype.editKeyword = function ($span) {
 
   var $delete = H5PEditor.$(
     '<a href="#" class="joubel-icon-cancel" title="' + H5PEditor.t('H5PEditor.CoursePresentation', 'cancel') + '">' +
-      '<span class="h5p-icon-circle"></span>' +
-      '<span class="h5p-icon-cross"></span>' +
+    '<span class="h5p-icon-circle"></span>' +
+    '<span class="h5p-icon-cross"></span>' +
     '</a>');
 
   var $textarea = H5PEditor.$('<textarea></textarea>')
@@ -1352,7 +1355,7 @@ H5PEditor.CoursePresentation.prototype.editKeyword = function ($span) {
 
         // Remove textarea
         $li.removeClass('h5p-editing');
-        $span.css({'display': 'inline-block'});
+        $span.css({ 'display': 'inline-block' });
         $textarea.add($delete).remove();
       }
     }).focus();
@@ -1364,7 +1367,7 @@ H5PEditor.CoursePresentation.prototype.editKeyword = function ($span) {
     $textarea.val(oldTitle).blur();
     H5PEditor.$('[role="menuitem"].h5p-current').focus();
   }).keydown(function (e) {
-    if ([32,13].indexOf(e.which) !== -1) {
+    if ([32, 13].indexOf(e.which) !== -1) {
       H5PEditor.$(this).click();
       return false;
     }
@@ -1457,7 +1460,9 @@ H5PEditor.CoursePresentation.prototype.generateForm = function (elementParams, t
       hideFields.push('backgroundOpacity');
       hideFields.push('displayAsButton');
       hideFields.push('buttonSize');
+      hideFields.push('animateEvent');
     }
+    hideFields.push('animateEvent');
 
     // Only display goToSlide field for goToSlide elements
     self.hideFields(elementFields, hideFields);
@@ -1550,8 +1555,8 @@ H5PEditor.CoursePresentation.prototype.setImageSize = function (element, element
 
   // Avoid to small images
   var minSize = parseInt(element.$wrapper.css('font-size')) +
-                element.$wrapper.outerHeight() -
-                element.$wrapper.innerHeight();
+    element.$wrapper.outerHeight() -
+    element.$wrapper.innerHeight();
 
   // Use minSize
   if (fileParams.width < minSize) {
@@ -1579,7 +1584,7 @@ H5PEditor.CoursePresentation.prototype.setImageSize = function (element, element
  * @param {object} fileParams
  */
 H5PEditor.CoursePresentation.prototype.setVideoSize = function (elementParams, fileParams) {
-  if (!fileParams){
+  if (!fileParams) {
     return;
   }
 
@@ -1671,6 +1676,8 @@ H5PEditor.CoursePresentation.prototype.findLibraryTitle = function (library, nex
  */
 H5PEditor.CoursePresentation.prototype.processElement = function (elementParams, $wrapper, slideIndex, elementInstance) {
   var that = this;
+
+  // console.log({elementParams});
 
   // Detect type
   var type;
@@ -1785,6 +1792,29 @@ H5PEditor.CoursePresentation.prototype.addToDragNBar = function (element, elemen
     });
   });
 
+  dnbElement.contextMenu.on('contextMenuAnimate', function () {
+    const styleAttr = element.$wrapper[0].getAttribute('style');
+    console.log({mainWrapper: element.$wrapper, style: styleAttr});
+    window.currentWrapper = element.$wrapper;
+    window.currentElement = element;
+    const confirmationDialog = self.showAnimationDialog(
+      element, element.$wrapper, 
+      (elementParams.action !== undefined && H5P.libraryFromString(elementParams.action.library).machineName === 'H5P.ContinuousText')
+    );
+    self.dnb.blurAll();
+
+    confirmationDialog.on('canceled', () => {
+      return;
+    });
+    // confirmationDialog.on('confirmed', () => {
+    //   if (H5PEditor.Html) {
+    //     H5PEditor.Html.removeWysiwyg();
+    //   }
+    //   self.removeElement(element, element.$wrapper, (elementParams.action !== undefined && H5P.libraryFromString(elementParams.action.library).machineName === 'H5P.ContinuousText'));
+    //   self.dnb.blurAll();
+    // });
+  });
+
   dnbElement.contextMenu.on('contextMenuBringToFront', function () {
     // Old index
     var oldZ = element.$wrapper.index();
@@ -1851,7 +1881,7 @@ H5PEditor.CoursePresentation.prototype.addToDragNBar = function (element, elemen
 H5PEditor.CoursePresentation.prototype.removeElement = function (element, $wrapper, isContinuousText) {
   var slideIndex = this.cp.$current.index();
   var elementIndex = $wrapper.index();
-
+  console.log(($wrapper));
   var elementInstance = this.cp.elementInstances[slideIndex][elementIndex];
   var removeForm = (element.children.length ? true : false);
 
@@ -1889,6 +1919,36 @@ H5PEditor.CoursePresentation.prototype.removeElement = function (element, $wrapp
   if (isContinuousText) {
     H5P.ContinuousText.Engine.run(this);
   }
+};
+
+/**
+ * Removes element from slide.
+ *
+ * @param {Object} element
+ * @param {jQuery} $wrapper
+ * @param {Number} slideIndex
+ * @param {String} animateEventValue
+ * @param {Function} toggleModal
+ * @returns {undefined}
+ */
+ H5PEditor.CoursePresentation.prototype.addingElement = function (element, $wrapper, slideIndex, animateEventValue, toggleModal) {
+  var slidesIndex = this.cp.$current.index();
+  let elementIndex, currentWrapper;
+  if ($wrapper.index() == -1) {
+    elementIndex = window.currentWrapper.index();
+    currentWrapper = window.currentWrapper;
+  } else {
+    elementIndex = $wrapper.index();
+    currentWrapper = $wrapper;
+  }
+
+  console.log({$wrapper: window.currentWrapper});
+  console.log({animateEventValue, slidesIndex, elementIndex})
+  console.log({check: this.params.slides[slidesIndex].elements});
+  this.params.slides[slidesIndex].elements[elementIndex == -1 ? 0 :elementIndex].animateEvent = animateEventValue;
+
+  this.redrawElement(currentWrapper, element, this.params.slides[slidesIndex].elements[elementIndex]);
+  toggleModal();
 };
 
 /**
@@ -2018,17 +2078,17 @@ H5PEditor.CoursePresentation.prototype.showElementForm = function (element, $wra
     // h5p-dialog-box is IVs video choose dialog
     H5P.jQuery('.ckeditor, .h5peditor-text', libraryField.$myField)
       .not('.h5p-editor-dialog .ckeditor, ' +
-      '.h5p-editor-dialog .h5peditor-text, ' +
-      '.h5p-dialog-box .ckeditor, ' +
-      '.h5p-dialog-box .h5peditor-text', libraryField.$myField)
+        '.h5p-editor-dialog .h5peditor-text, ' +
+        '.h5p-dialog-box .ckeditor, ' +
+        '.h5p-dialog-box .h5peditor-text', libraryField.$myField)
       .eq(0)
       .focus();
 
     // GotoSlide is not library therefore require separate focus
     if (libraryField.$myField === undefined) {
       H5P.jQuery('.h5p-coursepresentation-editor .form-manager-slidein .h5peditor-text')
-      .eq(0)
-      .focus();
+        .eq(0)
+        .focus();
     }
   };
 
@@ -2075,6 +2135,7 @@ H5PEditor.CoursePresentation.prototype.showElementForm = function (element, $wra
 H5PEditor.CoursePresentation.prototype.redrawElement = function ($wrapper, element, elementParams, repeat) {
   var elementIndex = $wrapper.index();
   var slideIndex = this.cp.$current.index();
+  console.log({slideIndex, elementIndex});
   var elementsParams = this.params.slides[slideIndex].elements;
   var elements = this.elements[slideIndex];
   var elementInstances = this.cp.elementInstances[slideIndex];
@@ -2083,7 +2144,7 @@ H5PEditor.CoursePresentation.prototype.redrawElement = function ($wrapper, eleme
   repeat = (typeof repeat === 'undefined') ? elements.length - 1 - elementIndex : repeat;
 
   if (elementParams.action && elementParams.action.library.split(' ')[0] === 'H5P.Chart' &&
-      elementParams.action.params.graphMode === 'pieChart') {
+    elementParams.action.params.graphMode === 'pieChart') {
     elementParams.width = elementParams.height / this.slideRatio;
   }
 
@@ -2250,10 +2311,69 @@ H5PEditor.CoursePresentation.findField = function (name, fields) {
  * @returns {HTMLElement} confirmationDialog
  */
 H5PEditor.CoursePresentation.prototype.showConfirmationDialog = function (dialogOptions) {
+  // console.log(new H5P.ConfirmationDialog(dialogOptions));
   const confirmationDialog = new H5P.ConfirmationDialog(dialogOptions)
     .appendTo(document.body);
 
   confirmationDialog.show(this.$item.offset().top);
+  return confirmationDialog;
+};
+
+H5PEditor.CoursePresentation.prototype.showAnimationDialog = function (element, $currentWrapper, isContinuousText) {
+  var slideIndex = this.cp.$current.index();
+  var index = this.cp.$current.index();
+  var slideKids = this.elements[index];
+
+  console.log({index, slideKids, stylle: window.wrapperStyleAttr});
+  const modalBody = `<div class="animate-modal show-modal">
+    <div class="animate-modal-content">
+        <span class="close-button">×</span>
+        <h2>Select the Animation you want</h2>
+        <form>
+          <select id="animate-event-type">
+            <option value="">--Select--</option>
+            <option value="onclick">on click</option>
+          </select>
+          <select id="animate-type">
+            <option value="">--Select--</option>
+            <option value="fltIn">Fly In</option>
+            <option value="fltOut">Fly Out</option>
+            <option value="appear">Appear</option>
+            <option value="disappear">Disappear</option>
+          </select>
+        </form>
+    </div>
+  </div>`;
+
+  const confirmationDialog = H5P.jQuery(modalBody)
+    .appendTo('body');
+  confirmationDialog.show(this.$item.offset().top);
+
+  var modal = document.querySelector(".animate-modal");
+  // var trigger = document.querySelector(".trigger");
+  var closeButton = document.querySelector(".close-button");
+
+  function toggleModal() {
+    modal.classList.toggle("show-modal");
+  }
+
+  function windowOnClick(event) {
+    if (event.target === modal) {
+      toggleModal();
+    }
+  }
+
+  closeButton.addEventListener("click", toggleModal);
+  window.addEventListener("click", windowOnClick);
+
+  
+  H5P.jQuery(document).on('change', '#animate-event-type', (e) => {
+    const animateValue = e.target.value;
+  
+    console.log({modal: $currentWrapper});
+    this.addingElement(element, $currentWrapper, slideIndex, animateValue, toggleModal);
+  })
+
   return confirmationDialog;
 };
 

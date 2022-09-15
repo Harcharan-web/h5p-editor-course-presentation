@@ -36,6 +36,7 @@
     "opacity": "Opacity",
     "goToSlide": "Go to slide",
     "expandBreadcrumbButtonLabel": "Go back",
-    "collapseBreadcrumbButtonLabel": "Close navigation"
+    "collapseBreadcrumbButtonLabel": "Close navigation",
+    "animationEvent": "How do you want to Animate"
   }
 }
