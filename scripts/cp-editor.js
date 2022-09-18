@@ -231,7 +231,6 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
   }
 
   this.cp.$boxWrapper.add(this.cp.$boxWrapper.find('.h5p-presentation-wrapper:first')).css('overflow', 'visible');
-  elementParams.presentation = this.cp.presentation
   const element = this.cp.children[slideIndex].addChild(elementParams);
   return this.cp.attachElement(elementParams, element.instance, this.cp.$current, slideIndex);
 };
@@ -2390,7 +2389,7 @@ H5PEditor.CoursePresentation.prototype.showAnimationDialog = function (element, 
     const animateValue = e.target.value;
   
     console.log({modal: animateEventValue});
-    // this.addingElement(element, $currentWrapper, slideIndex, animateEventValue, animateValue, toggleModal);
+    this.addingElement(element, $currentWrapper, slideIndex, animateEventValue, animateValue, toggleModal);
   })
 
   // return confirmationDialog;
