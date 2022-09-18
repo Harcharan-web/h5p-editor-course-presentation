@@ -144,8 +144,7 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
       x: 30,
       y: 30,
       width: 40,
-      height: 40,
-      animate:true
+      height: 40
     };
 
     if (library === 'GoToSlide') {
@@ -203,8 +202,7 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
     elementParams.pasted = true;
   }
   var slideIndex = this.cp.$current.index();
-  console.log({sad: this.params.slides, slideIndex: slideIndex + 1});
-  var slideParams = this.params.slides[slideIndex + 1];
+  var slideParams = this.params.slides[slideIndex];
 
   if (slideParams.elements === undefined) {
     // No previous elements
@@ -234,8 +232,8 @@ H5PEditor.CoursePresentation.prototype.addElement = function (library, options) 
 
   this.cp.$boxWrapper.add(this.cp.$boxWrapper.find('.h5p-presentation-wrapper:first')).css('overflow', 'visible');
   elementParams.presentation = this.cp.presentation
-  const element = this.cp.children[slideIndex + 1].addChild(elementParams);
-  return this.cp.attachElement(elementParams, element.instance, this.cp.$current, slideIndex + 1);
+  const element = this.cp.children[slideIndex].addChild(elementParams);
+  return this.cp.attachElement(elementParams, element.instance, this.cp.$current, slideIndex);
 };
 
 /**
@@ -1797,15 +1795,16 @@ H5PEditor.CoursePresentation.prototype.addToDragNBar = function (element, elemen
     console.log({mainWrapper: element.$wrapper, style: styleAttr});
     window.currentWrapper = element.$wrapper;
     window.currentElement = element;
-    const confirmationDialog = self.showAnimationDialog(
+    window.currentElementIndex = element.$wrapper.index();
+    self.showAnimationDialog(
       element, element.$wrapper, 
       (elementParams.action !== undefined && H5P.libraryFromString(elementParams.action.library).machineName === 'H5P.ContinuousText')
     );
     self.dnb.blurAll();
 
-    confirmationDialog.on('canceled', () => {
-      return;
-    });
+    // confirmationDialog.on('canceled', () => {
+    //   return;
+    // });
     // confirmationDialog.on('confirmed', () => {
     //   if (H5PEditor.Html) {
     //     H5PEditor.Html.removeWysiwyg();
@@ -1931,7 +1930,7 @@ H5PEditor.CoursePresentation.prototype.removeElement = function (element, $wrapp
  * @param {Function} toggleModal
  * @returns {undefined}
  */
- H5PEditor.CoursePresentation.prototype.addingElement = function (element, $wrapper, slideIndex, animateEventValue, toggleModal) {
+ H5PEditor.CoursePresentation.prototype.addingElement = function (element, $wrapper, slideIndex, animateEventValue, animateValue, toggleModal) {
   var slidesIndex = this.cp.$current.index();
   let elementIndex, currentWrapper;
   if ($wrapper.index() == -1) {
@@ -1941,14 +1940,23 @@ H5PEditor.CoursePresentation.prototype.removeElement = function (element, $wrapp
     elementIndex = $wrapper.index();
     currentWrapper = $wrapper;
   }
-
-  console.log({$wrapper: window.currentWrapper});
-  console.log({animateEventValue, slidesIndex, elementIndex})
-  console.log({check: this.params.slides[slidesIndex].elements});
-  this.params.slides[slidesIndex].elements[elementIndex == -1 ? 0 :elementIndex].animateEvent = animateEventValue;
-
-  this.redrawElement(currentWrapper, element, this.params.slides[slidesIndex].elements[elementIndex]);
+  console.log({
+    elemnts: this.params.slides[slidesIndex].elements, 
+    indx: elementIndex, 
+    currentWrapper, 
+    $wrapper,
+    curtIndex: window.currentElementIndex
+  });
+  this.params.slides[slidesIndex].elements[
+    elementIndex == -1 ? 0 : elementIndex
+  ].animateEvent = animateEventValue;
+  this.params.slides[slidesIndex].elements[
+    elementIndex == -1 ? 0 : elementIndex
+  ].animateType = animateValue;
+  this.redrawElement(currentWrapper, element, this.params.slides[slidesIndex].elements[elementIndex == -1 ? 0 : elementIndex]);
   toggleModal();
+  document.getElementById('animation-selection-form').reset();
+  this.updateSlidesSidebar();
 };
 
 /**
@@ -2135,7 +2143,11 @@ H5PEditor.CoursePresentation.prototype.showElementForm = function (element, $wra
 H5PEditor.CoursePresentation.prototype.redrawElement = function ($wrapper, element, elementParams, repeat) {
   var elementIndex = $wrapper.index();
   var slideIndex = this.cp.$current.index();
-  console.log({slideIndex, elementIndex});
+  console.log({
+    elementIndex1212: elementParams, 
+    elementParamss: elementParams?.action?.subContentId,
+    elemIndex: elementIndex
+  });
   var elementsParams = this.params.slides[slideIndex].elements;
   var elements = this.elements[slideIndex];
   var elementInstances = this.cp.elementInstances[slideIndex];
@@ -2323,31 +2335,37 @@ H5PEditor.CoursePresentation.prototype.showAnimationDialog = function (element, 
   var slideIndex = this.cp.$current.index();
   var index = this.cp.$current.index();
   var slideKids = this.elements[index];
+  let modalBody;
 
-  console.log({index, slideKids, stylle: window.wrapperStyleAttr});
-  const modalBody = `<div class="animate-modal show-modal">
+  console.log({stylle: H5P.jQuery(".animate-modal").length});
+  if (H5P.jQuery(".animate-modal").length <= 0) {
+  modalBody = `<div class="animate-modal show-modal">
     <div class="animate-modal-content">
         <span class="close-button">×</span>
         <h2>Select the Animation you want</h2>
-        <form>
+        <form id="animation-selection-form">
           <select id="animate-event-type">
             <option value="">--Select--</option>
             <option value="onclick">on click</option>
           </select>
           <select id="animate-type">
             <option value="">--Select--</option>
-            <option value="fltIn">Fly In</option>
-            <option value="fltOut">Fly Out</option>
-            <option value="appear">Appear</option>
-            <option value="disappear">Disappear</option>
+            <option value="slideInUp">Fly In</option>
+            <option value="slideInDown">Fly Out</option>
+            <option value="fadeIn">Appear</option>
+            <option value="fadeOut">Disappear</option>
           </select>
         </form>
     </div>
   </div>`;
-
+  
   const confirmationDialog = H5P.jQuery(modalBody)
     .appendTo('body');
   confirmationDialog.show(this.$item.offset().top);
+  } else {
+    H5P.jQuery(".animate-modal").addClass('show-modal')
+    // modalBody = H5P.jQuery(".animate-modal")[0];
+  }
 
   var modal = document.querySelector(".animate-modal");
   // var trigger = document.querySelector(".trigger");
@@ -2367,14 +2385,15 @@ H5PEditor.CoursePresentation.prototype.showAnimationDialog = function (element, 
   window.addEventListener("click", windowOnClick);
 
   
-  H5P.jQuery(document).on('change', '#animate-event-type', (e) => {
+  H5P.jQuery(document).on('change', '#animate-type', (e) => {
+    const animateEventValue = document.getElementById('animate-event-type').value
     const animateValue = e.target.value;
   
-    console.log({modal: $currentWrapper});
-    this.addingElement(element, $currentWrapper, slideIndex, animateValue, toggleModal);
+    console.log({modal: animateEventValue});
+    // this.addingElement(element, $currentWrapper, slideIndex, animateEventValue, animateValue, toggleModal);
   })
 
-  return confirmationDialog;
+  // return confirmationDialog;
 };
 
 /** @constant {Number} */
